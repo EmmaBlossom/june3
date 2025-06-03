@@ -1,0 +1,343 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Кэшбек‑таблица</title>
+    <style>
+      :root {
+        --clr-bg: #f9fafb;
+        --clr-accent: #6366f1;
+        --clr-accent-hover: #4f46e5;
+        --clr-text: #111827;
+      }
+      body {
+        margin: 0;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        background: var(--clr-bg);
+        color: var(--clr-text);
+        line-height: 1.4;
+        padding: 1rem;
+      }
+      h1 {margin-top:0; font-size:1.6rem; text-align:center;}
+      .filters {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
+        margin-bottom: 1rem;
+        align-items: flex-start;
+      }
+      label {font-weight: 600; display:block; margin-bottom: .25rem;}
+      select, input[type="search"] {
+        width: 100%;
+        padding: .5rem .6rem;
+        border: 1px solid #d1d5db;
+        border-radius: .5rem;
+        font-size: 1rem;
+      }
+      .checkbox-list {
+        border: 1px solid #d1d5db;
+        border-radius: .5rem;
+        padding: .5rem .6rem;
+        max-height: 140px;
+        overflow-y: auto;
+        background:#fff;
+      }
+      .checkbox-list label {
+        display:flex;
+        align-items:center;
+        gap:.5rem;
+        font-weight:400;
+      }
+      button.reset {
+        padding:.6rem 1rem;
+        background: var(--clr-accent);
+        color:#fff;
+        border:none;
+        border-radius:.5rem;
+        font-size:1rem;
+        cursor:pointer;
+        transition:background .2s;
+      }
+      button.reset:hover {background: var(--clr-accent-hover);}
+
+      /* TABLE */
+      .table-wrap {overflow-x:auto; margin-top:1rem;}
+      table {border-collapse: collapse; width:100%; min-width:600px; background:#fff; border-radius:.5rem; overflow:hidden;}
+      th, td {padding:.75rem 1rem; text-align:left;}
+      th {background:#e5e7eb; font-weight:600; font-size:.9rem; white-space:nowrap;}
+      tr:nth-child(even) td {background:#f3f4f6;}
+      tr {cursor:pointer; transition:background .15s;}
+      tr:hover td {background:#eef2ff;}
+
+      /* DETAILS */
+      .details {
+        margin-top:1rem;
+        background:#fff;
+        border-radius:.5rem;
+        padding:1rem;
+        border:1px solid #e5e7eb;
+        display:none;
+      }
+      .details h2 {margin-top:0; font-size:1.2rem;}
+      .details p {margin:.25rem 0;}
+
+      /* MESSAGE */
+      .msg { margin-top:1rem; font-style:italic; }
+
+      /* RESPONSIVE TABLE ON MOBILE */
+      @media (max-width: 640px) {
+        table, thead, tbody, th, td, tr {display:block;}
+        thead {display:none;}
+        tr {margin-bottom: .75rem; border:1px solid #e5e7eb; border-radius:.5rem;}
+        td {text-align:right; padding-left:50%; position:relative;}
+        td::before {
+          content: attr(data-label);
+          position:absolute;
+          left:.75rem;
+          width:45%;
+          padding-right:.5rem;
+          white-space:nowrap;
+          text-align:left;
+          font-weight:600;
+          color:#6b7280;
+        }
+      }
+    </style>
+  </head>
+  <body>
+
+    <h1>Кэшбек‑акции</h1>
+
+    <div class="filters" id="filters">
+      <div>
+        <label for="categorySelect">Категория</label>
+        <select id="categorySelect">
+          <option value="">— Все —</option>
+        </select>
+      </div>
+      <div>
+        <label>Банк</label>
+        <div class="checkbox-list" id="bankFilter"></div>
+      </div>
+      <div>
+        <label for="companySelect">Компания / Бренд</label>
+        <select id="companySelect">
+          <option value="">— Все —</option>
+        </select>
+      </div>
+      <div>
+        <label for="sizeSelect">Размер кэшбэка / скидки</label>
+        <select id="sizeSelect">
+          <option value="">— Все —</option>
+        </select>
+      </div>
+      <div>
+        <label for="searchInput">Поиск</label>
+        <input type="search" id="searchInput" placeholder="Введите текст...">
+      </div>
+      <div style="align-self:end;">
+        <button class="reset" id="resetBtn">Сбросить фильтры</button>
+      </div>
+    </div>
+
+    <p class="msg" id="hintMsg">Выберите фильтр «Категория», чтобы таблица отобразилась.</p>
+
+    <div class="table-wrap" id="tableWrap" style="display:none;">
+      <table id="dataTable">
+        <thead>
+          <tr>
+            <th>Банк</th>
+            <th>Компания / Бренд</th>
+            <th>Размер кэшбэка / скидки</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="details" id="details"></div>
+
+    <script>
+      const DATA_URL = 'data/offers.json';
+      let rawData = [];
+      let filters = {
+        category: '',
+        banks: new Set(),
+        company: '',
+        size: '',
+        search: ''
+      };
+
+      // DOM refs
+      const categorySelect = document.getElementById('categorySelect');
+      const bankFilter = document.getElementById('bankFilter');
+      const companySelect = document.getElementById('companySelect');
+      const sizeSelect = document.getElementById('sizeSelect');
+      const searchInput = document.getElementById('searchInput');
+      const resetBtn = document.getElementById('resetBtn');
+      const tableBody = document.querySelector('#dataTable tbody');
+      const tableWrap = document.getElementById('tableWrap');
+      const detailsBox = document.getElementById('details');
+      const hintMsg = document.getElementById('hintMsg');
+
+      async function init() {
+        try {
+          const res = await fetch(DATA_URL);
+          rawData = await res.json();
+          buildInitialFilters();
+          attachListeners();
+          render();
+        } catch (err) {
+          console.error('Ошибка загрузки данных', err);
+          hintMsg.textContent = 'Не удалось загрузить данные :(';
+        }
+      }
+
+      function buildInitialFilters() {
+        updateFilterOptions();
+      }
+
+      function attachListeners() {
+        categorySelect.addEventListener('change', () => {
+          filters.category = categorySelect.value;
+          render();
+        });
+
+        companySelect.addEventListener('change', () => {
+          filters.company = companySelect.value;
+          render();
+        });
+
+        sizeSelect.addEventListener('change', () => {
+          filters.size = sizeSelect.value;
+          render();
+        });
+
+        searchInput.addEventListener('input', () => {
+          filters.search = searchInput.value.trim().toLowerCase();
+          render();
+        });
+
+        resetBtn.addEventListener('click', () => {
+          filters = {category:'', banks:new Set(), company:'', size:'', search:''};
+          searchInput.value='';
+          render();
+        });
+      }
+
+      function buildBankCheckboxes(values) {
+        bankFilter.innerHTML = '';
+        values.forEach(v => {
+          const id = `bank_${v.replace(/\s+/g,'_')}`;
+          const label = document.createElement('label');
+          const checkbox = document.createElement('input');
+          checkbox.type = 'checkbox';
+          checkbox.id = id;
+          checkbox.value = v;
+          checkbox.checked = filters.banks.has(v);
+          checkbox.addEventListener('change', () => {
+            if (checkbox.checked) {
+              filters.banks.add(v);
+            } else {
+              filters.banks.delete(v);
+            }
+            render();
+          });
+          label.appendChild(checkbox);
+          label.append(v);
+          bankFilter.appendChild(label);
+        });
+      }
+
+      function populateSelect(selectEl, values) {
+        const current = selectEl.value;
+        selectEl.innerHTML = '<option value="">— Все —</option>' +
+          values.map(v => `<option value="${v}">${v}</option>`).join('');
+        if (values.includes(current)) {
+          selectEl.value = current;
+        }
+      }
+
+      function updateFilterOptions() {
+        // For each filter, derive possible values based on other active filters
+        const banks = new Set();
+        const categories = new Set();
+        const companies = new Set();
+        const sizes = new Set();
+
+        rawData.forEach(item => {
+          // check if item matches all active filters *except* the one we are collecting for
+          // We'll collect anyway because we update all sets, then later filter out by logic.
+          banks.add(item['Банк']);
+          categories.add(item['Категория']);
+          companies.add(item['Компания/бренд']);
+          sizes.add(item['Размер кэшбека/скидки']);
+        });
+
+        populateSelect(categorySelect, Array.from(categories).sort());
+        buildBankCheckboxes(Array.from(banks).sort());
+        populateSelect(companySelect, Array.from(companies).sort());
+        populateSelect(sizeSelect, Array.from(sizes).sort());
+      }
+
+      function applyFilters() {
+        return rawData.filter(item => {
+          if (filters.category && item['Категория'] !== filters.category) return false;
+          if (filters.banks.size && !filters.banks.has(item['Банк'])) return false;
+          if (filters.company && item['Компания/бренд'] !== filters.company) return false;
+          if (filters.size && item['Размер кэшбека/скидки'] !== filters.size) return false;
+          if (filters.search) {
+            const haystack = Object.values(item).join(' ').toLowerCase();
+            if (!haystack.includes(filters.search)) return false;
+          }
+          return true;
+        });
+      }
+
+      function renderTable(data) {
+        tableBody.innerHTML = '';
+        data.forEach((item, idx) => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td data-label="Банк">${item['Банк']}</td>
+            <td data-label="Компания / Бренд">${item['Компания/бренд']}</td>
+            <td data-label="Размер">${item['Размер кэшбека/скидки']}</td>
+          `;
+          tr.addEventListener('click', () => showDetails(item));
+          tableBody.appendChild(tr);
+        });
+      }
+
+      function showDetails(item) {
+        detailsBox.style.display = 'block';
+        detailsBox.innerHTML = `<h2>${item['Компания/бренд']}</h2>` +
+          Object.entries(item).map(([k,v])=>`<p><strong>${k}:</strong> ${v}</p>`).join('');
+        detailsBox.scrollIntoView({behavior:'smooth', block:'start'});
+      }
+
+      function render() {
+        // Update filters because some values may have become invalid (smart update)
+        updateFilterOptions();
+
+        const filtered = applyFilters();
+        const shouldShowTable = (
+          (filters.category && filtered.length) ||
+          (filters.search && filtered.length)
+        );
+
+        if (shouldShowTable) {
+          renderTable(filtered);
+          tableWrap.style.display = '';
+          hintMsg.style.display = 'none';
+        } else {
+          tableWrap.style.display = 'none';
+          hintMsg.style.display = '';
+          detailsBox.style.display = 'none';
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', init);
+    </script>
+  </body>
+</html>

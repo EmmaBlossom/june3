@@ -1,351 +1,407 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ru">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Кэшбек‑таблица</title>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Кэшбэк‑акции</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet" />
+  <style>
+    body {
+      font-family: "Inter", sans-serif;
+      margin: 0;
+      background: #f9fafb;
+      color: #111827;
+    }
 
-    <!--
-      Основные переменные цвета (светлая схема).
-      Менять тут удобно целую палитру.
-    -->
-    <style>
-      :root {
-        --clr-bg: #f9fafb;              /* фон страницы */
-        --clr-accent: #6366f1;          /* основной акцент */
-        --clr-accent-hover: #4f46e5;    /* hover‑состояние */
-        --clr-text: #111827;            /* основной текст */
-      }
+    .container {
+      max-width: 1200px;
+      margin: auto;
+      padding: 1rem;
+    }
 
-      /* ===== ОСНОВНОЕ ОФОРМЛЕНИЕ ===== */
-      body {
-        margin: 0;
-        font-family: system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-        background: var(--clr-bg);
-        color: var(--clr-text);
-        line-height: 1.4;
-        padding: 1rem;
-      }
-      h1 {margin-top:0;font-size:1.6rem;text-align:center;}
+    h1 {
+      font-size: 1.75rem;
+      margin-bottom: 1rem;
+      font-weight: 600;
+    }
 
-      /* ===== БЛОК ФИЛЬТРОВ ===== */
+    .filters {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 1rem;
+      margin-bottom: 1rem;
+    }
+
+    .filter {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .filter label {
+      font-weight: 600;
+      margin-bottom: 0.25rem;
+    }
+
+    .filter select,
+    .filter input[type="text"] {
+      padding: 0.5rem 0.75rem;
+      border: 1px solid #d1d5db;
+      border-radius: 0.5rem;
+      min-width: 180px;
+      background: #ffffff;
+    }
+
+    #bankOptions {
+      display: flex;
+      flex-direction: column;
+      max-height: 200px;
+      overflow: auto;
+      border: 1px solid #d1d5db;
+      border-radius: 0.5rem;
+      padding: 0.5rem;
+      background: #ffffff;
+      min-width: 180px;
+    }
+
+    #bankOptions label {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      margin: 0.25rem 0;
+      font-size: 0.9rem;
+    }
+
+    button#resetBtn {
+      align-self: end;
+      padding: 0.6rem 1.2rem;
+      background: #ef4444;
+      color: #ffffff;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s;
+      height: fit-content;
+    }
+
+    button#resetBtn:hover {
+      background: #dc2626;
+    }
+
+    .table-wrapper {
+      overflow-x: auto;
+      border-radius: 0.75rem;
+      display: none;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 600px;
+      background: #ffffff;
+    }
+
+    th,
+    td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid #e5e7eb;
+    }
+
+    th {
+      background: #f3f4f6;
+      text-align: left;
+      font-weight: 600;
+    }
+
+    tr:hover {
+      background: #f9fafb;
+      cursor: pointer;
+    }
+
+    #details {
+      margin-top: 1.5rem;
+      display: none;
+      background: #ffffff;
+      padding: 1rem;
+      border-radius: 0.75rem;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      overflow-x: auto;
+    }
+
+    #details table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    #details th,
+    #details td {
+      padding: 0.5rem 0.75rem;
+      border-bottom: 1px solid #e5e7eb;
+      vertical-align: top;
+    }
+
+    #message {
+      margin-top: 0.5rem;
+      color: #6b7280;
+    }
+
+    @media (max-width: 600px) {
       .filters {
-        display: grid;
-        gap: 1rem;
-        grid-template-columns: repeat(auto-fit,minmax(220px,1fr));
-        margin-bottom: 1rem;
-        align-items: flex-start;
+        flex-direction: column;
       }
-      label {font-weight: 600;display:block;margin-bottom:.25rem;}
-      select,input[type="search"] {
-        width: 100%;
-        padding:.5rem .6rem;
-        border:1px solid #d1d5db;
-        border-radius:.5rem;
-        font-size:1rem;
+
+      .filter select,
+      .filter input[type="text"],
+      #bankOptions {
+        min-width: 100%;
       }
-      /* компактный список чекбоксов для "Банк" */
-      .checkbox-list {
-        border:1px solid #d1d5db;
-        border-radius:.5rem;
-        padding:.5rem .6rem;
-        max-height:150px;
-        overflow-y:auto;
-        background:#fff;
+
+      table {
+        font-size: 0.875rem;
       }
-      .checkbox-list label{display:flex;align-items:center;gap:.5rem;font-weight:400;}
-      button.reset{
-        padding:.6rem 1rem;
-        background:var(--clr-accent);
-        color:#fff;border:none;border-radius:.5rem;font-size:1rem;cursor:pointer;
-        transition:background .2s;
+
+      th,
+      td {
+        white-space: normal;
+        word-wrap: break-word;
       }
-      button.reset:hover{background:var(--clr-accent-hover);}  
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Кэшбэк‑акции</h1>
 
-      /* ===== ТАБЛИЦА ===== */
-      .table-wrap{overflow-x:auto;margin-top:1rem;}
-      table{border-collapse:collapse;width:100%;min-width:600px;background:#fff;border-radius:.5rem;overflow:hidden;}
-      th,td{padding:.75rem 1rem;text-align:left;}
-      th{background:#e5e7eb;font-weight:600;font-size:.9rem;white-space:nowrap;}
-      tr:nth-child(even) td{background:#f3f4f6;}
-      tr{cursor:pointer;transition:background .15s;}
-      tr:hover td{background:#eef2ff;}
-
-      /* ===== КАРТОЧКА ДЕТАЛЕЙ ===== */
-      .details{margin-top:1rem;background:#fff;border-radius:.5rem;padding:1rem;border:1px solid #e5e7eb;display:none;word-break:break-word;}
-      .details h2{margin-top:0;font-size:1.2rem;}
-      .details p{margin:.25rem 0;}
-
-      /* ===== СООБЩЕНИЕ‑ПОДСКАЗКА ===== */
-      .msg{margin-top:1rem;font-style:italic;}
-
-      /* ===== МОБИЛЬНАЯ АДАПТАЦИЯ ТАБЛИЦЫ ===== */
-      @media(max-width:640px){
-        /* превращаем таблицу в списки‑карточки */
-        table,thead,tbody,th,td,tr{display:block;}
-        thead{display:none;}
-        tr{margin-bottom:.75rem;border:1px solid #e5e7eb;border-radius:.5rem;}
-        td{text-align:right;padding-left:50%;position:relative;}
-        /* Псевдо‑заголовок ячейки */
-        td::before{
-          content:attr(data-label);
-          position:absolute;left:.75rem;width:45%;padding-right:.5rem;
-          white-space:nowrap;text-align:left;font-weight:600;color:#6b7280;
-        }
-      }
-    </style>
-  </head>
-  <body>
-
-    <h1>Кэшбек‑акции</h1>
-
-    <!-- ================== ФИЛЬТРЫ ================== -->
-    <div class="filters" id="filters">
-      <!-- Категория -->
-      <div>
-        <label for="categorySelect">Категория</label>
-        <select id="categorySelect"><option value="">— Все —</option></select>
+    <!-- ФИЛЬТРЫ -->
+    <div class="filters">
+      <div class="filter">
+        <label for="categoryFilter">Категория</label>
+        <select id="categoryFilter">
+          <option value="">-- Все категории --</option>
+        </select>
       </div>
-      <!-- Банк (несколько галочек) -->
-      <div>
+
+      <div class="filter">
         <label>Банк</label>
-        <div class="checkbox-list" id="bankFilter"></div>
+        <div id="bankOptions"></div>
       </div>
-      <!-- Компания / бренд -->
-      <div>
-        <label for="companySelect">Компания / Бренд</label>
-        <select id="companySelect"><option value="">— Все —</option></select>
+
+      <div class="filter">
+        <label for="brandFilter">Компания/бренд</label>
+        <select id="brandFilter">
+          <option value="">-- Все бренды --</option>
+        </select>
       </div>
-      <!-- Размер кешбэка -->
-      <div>
-        <label for="sizeSelect">Размер кэшбэка / скидки</label>
-        <select id="sizeSelect"><option value="">— Все —</option></select>
+
+      <div class="filter">
+        <label for="cashbackFilter">Размер кэшбека/скидки</label>
+        <select id="cashbackFilter">
+          <option value="">-- Любой --</option>
+        </select>
       </div>
-      <!-- Поиск -->
-      <div>
+
+      <div class="filter" style="flex: 1">
         <label for="searchInput">Поиск</label>
-        <input type="search" id="searchInput" placeholder="Введите текст…">
+        <input type="text" id="searchInput" placeholder="Поиск по всем полям…" />
       </div>
-      <!-- Сброс -->
-      <div style="align-self:end;">
-        <button class="reset" id="resetBtn">Сбросить фильтры</button>
-      </div>
+
+      <button id="resetBtn">Сбросить фильтры</button>
     </div>
 
-    <!-- Подсказка, когда таблица скрыта -->
-    <p class="msg" id="hintMsg">Выберите фильтр «Категория», чтобы таблица отобразилась.</p>
+    <p id="message">
+      Выберите фильтр «Категория» или воспользуйтесь поиском, чтобы увидеть таблицу. Нажмите на акцию, чтобы увидеть подробности акции.
+    </p>
 
-    <!-- Обёртка‑скролл для таблицы -->
-    <div class="table-wrap" id="tableWrap" style="display:none;">
+    <!-- ТАБЛИЦА -->
+    <div class="table-wrapper">
       <table id="dataTable">
         <thead>
           <tr>
             <th>Банк</th>
-            <th>Компания / Бренд</th>
-            <th>Размер кэшбэка / скидки</th>
+            <th>Компания/бренд</th>
+            <th>Размер кэшбека/скидки</th>
           </tr>
         </thead>
         <tbody></tbody>
       </table>
     </div>
 
-    <!-- Карточка деталей выбранной строки -->
-    <div class="details" id="details"></div>
+    <!-- ДЕТАЛИ -->
+    <div id="details"></div>
+  </div>
 
-    <!-- ================== JS ================== -->
-    <script>
-      // ================= ПУТЬ К JSON =================
-      // При деплое важно, чтобы относительный путь вёл к тому же origin,
-      // иначе сработает политика CORS.
-      const DATA_URL = 'data/offers.json';
+  <script>
+    /**
+     * Измените путь ниже на реальный путь к JSON‑файлу в вашем репозитории,
+     * например 'data/offers.json'.
+     */
+    const jsonUrl = "json.json";
 
-      // Исходные данные (сырые) и объект фильтров
-      let rawData = [];
-      let filters = {
-        category: '',           // выбранная категория (string)
-        banks: new Set(),       // множество выбранных банков
-        company: '',            // выбранная компания/бренд
-        size: '',               // выбранный размер кешбэка
-        search: ''              // поисковая строка (lowercase)
+    let rawData = [];
+    let activeData = [];
+
+    // Элементы интерфейса
+    const categoryFilter = document.getElementById("categoryFilter");
+    const brandFilter = document.getElementById("brandFilter");
+    const cashbackFilter = document.getElementById("cashbackFilter");
+    const bankOptions = document.getElementById("bankOptions");
+    const searchInput = document.getElementById("searchInput");
+    const resetBtn = document.getElementById("resetBtn");
+    const tableWrapper = document.querySelector(".table-wrapper");
+    const tbody = document.querySelector("#dataTable tbody");
+    const details = document.getElementById("details");
+    const message = document.getElementById("message");
+
+    // Загрузка данных
+    fetch(jsonUrl)
+      .then((r) => r.json())
+      .then((data) => {
+        // Ожидаем массив объектов, но на всякий случай поддержим возможный обёртки
+        rawData = Array.isArray(data) ? data : data.records || [];
+        initFilters();
+        applyFilters();
+      })
+      .catch((err) => {
+        message.textContent = "Не удалось загрузить JSON-файл: " + err.message;
+      });
+
+    // Инициализация фильтров
+    function initFilters() {
+      // Категории
+      const categories = [...new Set(rawData.map((r) => r["Категория"]).filter(Boolean))].sort();
+      categories.forEach((c) => {
+        const o = document.createElement("option");
+        o.value = c;
+        o.textContent = c;
+        categoryFilter.appendChild(o);
+      });
+
+      // Банки (checkbox‑список)
+      const banks = [...new Set(rawData.map((r) => r["Банк"]).filter(Boolean))].sort();
+      banks.forEach((b) => {
+        const label = document.createElement("label");
+        label.innerHTML = `<input type="checkbox" value="${b}" /> ${b}`;
+        bankOptions.appendChild(label);
+      });
+
+      // Слушатели
+      [categoryFilter, brandFilter, cashbackFilter].forEach((el) => el.addEventListener("change", applyFilters));
+      bankOptions.addEventListener("change", applyFilters);
+      searchInput.addEventListener("input", applyFilters);
+      resetBtn.addEventListener("click", resetFilters);
+    }
+
+    // Сброс фильтров
+    function resetFilters() {
+      categoryFilter.value = "";
+      brandFilter.value = "";
+      cashbackFilter.value = "";
+      bankOptions.querySelectorAll("input").forEach((ch) => (ch.checked = false));
+      searchInput.value = "";
+      applyFilters();
+    }
+
+    // Применение фильтров и рендeр
+    function applyFilters() {
+      const selectedCategory = categoryFilter.value;
+      const selectedBrand = brandFilter.value;
+      const selectedCash = cashbackFilter.value;
+      const selectedBanks = [...bankOptions.querySelectorAll("input:checked")].map((i) => i.value);
+      const searchTerm = searchInput.value.toLowerCase();
+
+      activeData = rawData.filter((row) => {
+        const matchCategory = selectedCategory ? row["Категория"] === selectedCategory : true;
+        const matchBrand = selectedBrand ? row["Компания/бренд"] === selectedBrand : true;
+        const matchCash = selectedCash ? row["Размер кэшбека/скидки"] === selectedCash : true;
+        const matchBank = selectedBanks.length ? selectedBanks.includes(row["Банк"]) : true;
+        const rowStr = Object.values(row).join(" ").toLowerCase();
+        const matchSearch = searchTerm ? rowStr.includes(searchTerm) : true;
+        return matchCategory && matchBrand && matchCash && matchBank && matchSearch;
+      });
+
+      updateFilterOptions();
+      renderTable();
+    }
+
+    // Умное обновление опций фильтров
+    function updateFilterOptions() {
+      // Банки — прячем неактуальные
+      const currentBanks = [...new Set(activeData.map((r) => r["Банк"]))];
+      bankOptions.querySelectorAll("input").forEach((inp) => {
+        inp.parentElement.style.display = currentBanks.includes(inp.value) || inp.checked ? "flex" : "none";
+      });
+
+      // Вспомогательная функция для селектов
+      const refillSelect = (select, key, placeholder) => {
+        const prev = select.value;
+        select.innerHTML = `<option value="">${placeholder}</option>`;
+        [...new Set(activeData.map((r) => r[key]).filter(Boolean))].sort().forEach((v) => {
+          const opt = document.createElement("option");
+          opt.value = v;
+          opt.textContent = v;
+          select.appendChild(opt);
+        });
+        // Восстанавливаем выбор, если он всё ещё актуален
+        if ([...select.options].some((o) => o.value === prev)) {
+          select.value = prev;
+        }
       };
 
-      // --------------- Ссылки на DOM‑элементы ---------------
-      const categorySelect = document.getElementById('categorySelect');
-      const bankFilter    = document.getElementById('bankFilter');
-      const companySelect = document.getElementById('companySelect');
-      const sizeSelect    = document.getElementById('sizeSelect');
-      const searchInput   = document.getElementById('searchInput');
-      const resetBtn      = document.getElementById('resetBtn');
-      const tableBody     = document.querySelector('#dataTable tbody');
-      const tableWrap     = document.getElementById('tableWrap');
-      const detailsBox    = document.getElementById('details');
-      const hintMsg       = document.getElementById('hintMsg');
+      refillSelect(brandFilter, "Компания/бренд", "-- Все бренды --");
+      refillSelect(cashbackFilter, "Размер кэшбека/скидки", "-- Любой --");
+    }
 
-      // ========================================================
-      //  ИНИЦИАЛИЗАЦИЯ: загружаем JSON и вешаем обработчики
-      // ========================================================
-      async function init() {
-        try {
-          const res = await fetch(DATA_URL);
-          rawData = await res.json();
-          buildInitialUI();
-          attachListeners();
-          render();
-        } catch (err) {
-          console.error('Ошибка загрузки данных', err);
-          hintMsg.textContent = 'Не удалось загрузить данные :(';
-        }
-      }
-
-      // --------------------------------------------------------
-      //  Первичная отрисовка списков/чекбоксов, когда данных ещё 
-      //  не фильтровали. Здесь мы НЕ применяем фильтры — нужно
-      //  показать все возможные варианты.
-      // --------------------------------------------------------
-      function buildInitialUI() {
-        updateFilterOptions();
-      }
-
-      // --------------------------------------------------------
-      //  Навешиваем слушатели на все элементы управления.
-      // --------------------------------------------------------
-      function attachListeners() {
-        // Категория (одиночный select)
-        categorySelect.addEventListener('change', () => {
-          filters.category = categorySelect.value;
-          render();
-        });
-
-        // Компания / бренд
-        companySelect.addEventListener('change', () => {
-          filters.company = companySelect.value;
-          render();
-        });
-
-        // Размер кэшбэка / скидки
-        sizeSelect.addEventListener('change', () => {
-          filters.size = sizeSelect.value;
-          render();
-        });
-
-        // Поиск (live‑search)
-        searchInput.addEventListener('input', () => {
-          filters.search = searchInput.value.trim().toLowerCase();
-          render();
-        });
-
-        // Сброс всех фильтров
-        resetBtn.addEventListener('click', () => {
-          filters = {category:'',banks:new Set(),company:'',size:'',search:''};
-          // Сброс визуальныхControls
-          searchInput.value = '';
-          categorySelect.value = '';
-          companySelect.value  = '';
-          sizeSelect.value     = '';
-          // Чекбоксы bank пересоздадутся в updateFilterOptions()
-          render();
-        });
-      }
-
-      // --------------------------------------------------------
-      //  SMART‑функция: для каждого поля возвращает доступные
-      //  значения с учётом всех ОСТАЛЬНЫХ активных фильтров.
-      //  Пример: чтобы получить список «Компаний», мы игнорируем
-      //  filters.company, но учитываем category, banks, size и search.
-      // --------------------------------------------------------
-      function getPossibleValues(fieldKey) {
-        return new Set(
-          rawData.filter(item => {
-            // Проходим по всем фильтрам и проверяем, кроме того, что собираем
-            if (fieldKey !== 'category' && filters.category && item['Категория'] !== filters.category) return false;
-            if (fieldKey !== 'banks'    && filters.banks.size && !filters.banks.has(item['Банк'])) return false;
-            if (fieldKey !== 'company'  && filters.company && item['Компания/бренд'] !== filters.company) return false;
-            if (fieldKey !== 'size'     && filters.size && item['Размер кэшбэка/скидки'] !== filters.size) return false;
-            if (fieldKey !== 'search'   && filters.search) {
-              const hay = Object.values(item).join(' ').toLowerCase();
-              if (!hay.includes(filters.search)) return false;
-            }
-            return true;
-          }).map(item => {
-            switch(fieldKey){
-              case 'category':return item['Категория'];
-              case 'banks':   return item['Банк'];
-              case 'company': return item['Компания/бренд'];
-              case 'size':    return item['Размер кэшбэка/скидки'];
-            }
-          })
-        );
-      }
-
-      // --------------------------------------------------------
-      //  Перерисовываем options и чекбоксы так, чтобы они всегда
-      //  показывали только релевантные значения (smart update).
-      // --------------------------------------------------------
-      function updateFilterOptions() {
-        // Категория (select)
-        populateSelect(categorySelect, Array.from(getPossibleValues('category')).sort());
-        // Банк (мульти‑checkbox)
-        buildBankCheckboxes(Array.from(getPossibleValues('banks')).sort());
-        // Компания / бренд
-        populateSelect(companySelect, Array.from(getPossibleValues('company')).sort());
-        // Размер кэшбэка / скидки
-        populateSelect(sizeSelect, Array.from(getPossibleValues('size')).sort());
-      }
-
-      // ---------- Хелп: построить чекбоксы «Банк» ----------
-      function buildBankCheckboxes(values) {
-        bankFilter.innerHTML = '';
-        values.forEach(v => {
-          const id = `bank_${v.replace(/\s+/g,'_')}`;
-          const label = document.createElement('label');
-          const checkbox = document.createElement('input');
-          checkbox.type = 'checkbox';
-          checkbox.id = id;
-          checkbox.value = v;
-          checkbox.checked = filters.banks.has(v); // сверяем с текущим набором
-          checkbox.addEventListener('change', () => {
-            checkbox.checked ? filters.banks.add(v) : filters.banks.delete(v);
-            render();
-          });
-          label.appendChild(checkbox);
-          label.append(v);
-          bankFilter.appendChild(label);
-        });
-      }
-
-      // ---------- Хелп: populate <select> ----------
-      function populateSelect(selectEl, values) {
-        const current = selectEl.value; // запомним, что было выбрано
-        selectEl.innerHTML = '<option value="">— Все —</option>' +
-          values.map(v => `<option value="${v}">${v}</option>`).join('');
-        // если текущее значение всё ещё валидно — восстановим выделение
-        if (values.includes(current)) selectEl.value = current;
-      }
-
-      // --------------------------------------------------------
-      //  Фильтруем данные согласно filters и, если задано search,
-      //  применяем case‑insensitive substring.
-      // --------------------------------------------------------
-      function applyFilters() {
-        return rawData.filter(item => {
-          if (filters.category && item['Категория'] !== filters.category) return false;
-          if (filters.banks.size && !filters.banks.has(item['Банк'])) return false;
-          if (filters.company && item['Компания/бренд'] !== filters.company) return false;
-          if (filters.size && item['Размер кэшбэка/скидки'] !== filters.size) return false;
-          if (filters.search) {
-            const hay = Object.values(item).join(' ').toLowerCase();
-            if (!hay.includes(filters.search)) return false;
-          }
-          return true;
-        });
-      }
-
-      // ---------- Отрисовка tbody ----------
-      function renderTable(data) {
-        tableBody.innerHTML = '';
-        data.forEach(item => {
-          const tr = document.createElement('tr');
+    // Рендер таблицы
+    function renderTable() {
+      tbody.innerHTML = "";
+      if (activeData.length) {
+        activeData.forEach((row) => {
+          const tr = document.createElement("tr");
           tr.innerHTML = `
-            <td data-label="Банк">${item['Банк']}</td>
-            <td data-label="Компания / Бренд">${item['Компания/бренд']}</td>
-            <td data-label="Размер">${item['Размер кэшбэк
+            <td>${row["Банк"]}</td>
+            <td><a href="${row["Сайт"]}" target="_blank">${row["Компания/бренд"]}</a></td>
+            <td>${row["Размер кэшбека/скидки"]}</td>`;
+          tr.addEventListener("click", () => showDetails(row));
+          tbody.appendChild(tr);
+        });
+      }
+
+      // Логика отображения/скрытия таблицы
+      const showTable = (categoryFilter.value || searchInput.value) && activeData.length;
+      tableWrapper.style.display = showTable ? "block" : "none";
+      message.style.display = showTable ? "none" : "block";
+      if (!showTable) {
+        details.style.display = "none";
+      }
+    }
+
+    // Показ подробностей строки
+    function showDetails(row) {
+      details.innerHTML = "";
+      const table = document.createElement("table");
+      for (const [k, v] of Object.entries(row)) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <th>${k}</th>
+          <td>${linkify(v)}</td>`;
+        table.appendChild(tr);
+      }
+      details.appendChild(table);
+      details.style.display = "block";
+      // Автопрокрутка к подробностям
+      details.scrollIntoView({ behavior: "smooth" });
+    }
+
+    // Преобразуем URL‑ы в кликабельные ссылки, плюс переносы строк
+    function linkify(text) {
+      if (!text) return "";
+      const urlPattern = /(https?:\/\/[^\s]+)/g;
+      return text
+        .toString()
+        .replace(urlPattern, '<a href="$1" target="_blank">$1</a>')
+        .replace(/\n/g, "<br>");
+    }
+  </script>
+</body>
+</html>
